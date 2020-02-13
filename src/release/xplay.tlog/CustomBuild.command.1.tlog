@@ -1,0 +1,2 @@
+^C:\CODEREPOS\PLAYER_QT\SRC\XPLAY\RELEASE\MOC_PREDEFS.H.CBT
+cl -Bx"C:\App\QT\5.13.1\msvc2017_64\bin\qmake.exe" -nologo -Zc:wchar_t -FS -Zc:rvalueCast -Zc:inline -Zc:strictStrings -Zc:throwingNew -Zc:referenceBinding -Zc:__cplusplus -O2 -MD -E ..\..\..\..\APP\QT\5.13.1\MSVC2017_64\mkspecs\features\data\dummy.cpp 2>NUL >release\moc_predefs.h

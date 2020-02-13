@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>xplayClass</class>
+ <widget class="QWidget" name="xplayClass">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1280</width>
+    <height>720</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>xplay</string>
+  </property>
+  <widget class="xvideowidget" name="video">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1280</width>
+     <height>720</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="openFile">
+   <property name="geometry">
+    <rect>
+     <x>80</x>
+     <y>640</y>
+     <width>61</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>文件</string>
+   </property>
+  </widget>
+  <widget class="QSlider" name="playpos">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>690</y>
+     <width>1211</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="maximum">
+    <number>999</number>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Horizontal</enum>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="isplay">
+   <property name="geometry">
+    <rect>
+     <x>180</x>
+     <y>640</y>
+     <width>61</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>播放</string>
+   </property>
+  </widget>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>xvideowidget</class>
+   <extends>QOpenGLWidget</extends>
+   <header>xvideowidget.h</header>
+   <slots>
+    <slot>SliderPress()</slot>
+    <slot>SliderRelease()</slot>
+   </slots>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="xplay.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>openFile</sender>
+   <signal>clicked()</signal>
+   <receiver>xplayClass</receiver>
+   <slot>openFile()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>200</x>
+     <y>826</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>67</x>
+     <y>719</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>isplay</sender>
+   <signal>clicked()</signal>
+   <receiver>xplayClass</receiver>
+   <slot>PlayOrPause()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>211</x>
+     <y>660</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>209</x>
+     <y>719</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>playpos</sender>
+   <signal>sliderPressed()</signal>
+   <receiver>xplayClass</receiver>
+   <slot>SliderPress()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>304</x>
+     <y>704</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>308</x>
+     <y>719</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>playpos</sender>
+   <signal>sliderReleased()</signal>
+   <receiver>xplayClass</receiver>
+   <slot>SliderRelease()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>509</x>
+     <y>702</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>524</x>
+     <y>719</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>openFile()</slot>
+  <slot>PlayOrPause()</slot>
+  <slot>SliderPress()</slot>
+  <slot>SliderRelease()</slot>
+ </slots>
+</ui>
