@@ -5,5 +5,5 @@
 - 发布v1.0 release版
 - 视频指路 
 - [IU-Blueming网易云视频](http://music.163.com/mv/?id=10903021&userid=618164109)
-- 界面效果 <img src="https://github.com/nepleo/qt-vxplay/blob/master/src/Blueming-IU.png" "=50%x" alt="Blueming-IU" style="zoom:30%;" />
+- 界面效果 <img src="https://github.com/nepleo/qt-vxplay/blob/master/src/Blueming-IU.png" width="50%" height="50%" alt="Blueming-IU"/>
 
