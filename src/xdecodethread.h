@@ -1,32 +1,35 @@
 #pragma once
-struct AVPacket;
-class xdecode;
+
 #include <QThread>
 #include <mutex>
 #include <list>
+
+struct AVPacket;
+class xdecode;
+
 class xdecodethread:public QThread
 {
-public:
-	virtual void Push(AVPacket* pkt);
-	//È¡³öÒ»Ö¡Êı¾İ£¬²¢³öÕ»
-	virtual AVPacket* Pop();
+  public:
+    virtual void Push(AVPacket* pkt);
+    //å–å‡ºä¸€å¸§æ•°æ®ï¼Œå¹¶å‡ºæ ˆ
+    virtual AVPacket* Pop();
 
-	//ÇåÀí¶ÓÁĞ
-	virtual void Clear();
+           //æ¸…ç†é˜Ÿåˆ—
+    virtual void Clear();
 
-	//ÇåÀí×ÊÔ´£¬Í£Ö¹Ïß³Ì
-	virtual void Close();
+           //æ¸…ç†èµ„æºï¼Œåœæ­¢çº¿ç¨‹
+    virtual void Close();
 
-	xdecodethread();
-	virtual ~xdecodethread();
-	//×î´ó¶ÓÁĞ
-	int maxList = 100;
-	bool isExit = false;
+    xdecodethread();
+    virtual ~xdecodethread();
+    //æœ€å¤§é˜Ÿåˆ—
+    int maxList = 100;
+    bool isExit = false;
 
-protected:
+  protected:
 
-	std::list<AVPacket*> packs;
-	std::mutex mux;
-	xdecode* decode = 0;
+    std::list<AVPacket*> packs;
+    std::mutex mux;
+    xdecode* decode = 0;
 };
 

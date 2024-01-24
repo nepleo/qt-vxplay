@@ -7,104 +7,104 @@ using namespace std;
 
 bool xdecode::Open(AVCodecParameters* para)
 {
-	if (!para) return false;
-	Close();
-	///½âÂëÆ÷´ò¿ª
-	///ÕÒµ½½âÂëÆ÷
-	AVCodec* vcodec = avcodec_find_decoder(para->codec_id);
-	if (!vcodec)
-	{
-		avcodec_parameters_free(&para);
-		cout << "can't find the codec id " << para->codec_id;
-		return false;
-	}
-	 cout << "find the AVCodec " << para->codec_id << endl;
+    if (!para) return false;
+    Close();
+    ///è§£ç å™¨æ‰“å¼€
+    ///æ‰¾åˆ°è§£ç å™¨
+    AVCodec* vcodec = avcodec_find_decoder(para->codec_id);
+    if (!vcodec)
+    {
+        avcodec_parameters_free(&para);
+        cout << "can't find the codec id " << para->codec_id;
+        return false;
+    }
+    cout << "find the AVCodec " << para->codec_id << endl;
 
-	 mux.lock();
-	 codec = avcodec_alloc_context3(vcodec);
+    mux.lock();
+    codec = avcodec_alloc_context3(vcodec);
 
-	///ÅäÖÃ½âÂëÆ÷ÉÏÏÂÎÄ²ÎÊý
-	avcodec_parameters_to_context(codec, para);
-	avcodec_parameters_free(&para);
+           ///é…ç½®è§£ç å™¨ä¸Šä¸‹æ–‡å‚æ•°
+    avcodec_parameters_to_context(codec, para);
+    avcodec_parameters_free(&para);
 
-	//°ËÏß³Ì½âÂë
-	codec->thread_count = 8;
+           //å…«çº¿ç¨‹è§£ç 
+    codec->thread_count = 8;
 
-	///´ò¿ª½âÂëÆ÷ÉÏÏÂÎÄ
-	int re = avcodec_open2(codec, 0, 0);
-	if (re != 0)
-	{
-		
-		avcodec_free_context(&codec);
-		mux.unlock();
-		char buf[1024] = { 0 };
-		av_strerror(re, buf, sizeof(buf) - 1);
-		cout << "avcodec_open2  failed! :" << buf << endl;
-		return false;
-	}
-	mux.unlock();
-	cout << "video avcodec_open2 success!" << endl;
-	return true;
+           ///æ‰“å¼€è§£ç å™¨ä¸Šä¸‹æ–‡
+    int re = avcodec_open2(codec, 0, 0);
+    if (re != 0)
+    {
+
+        avcodec_free_context(&codec);
+        mux.unlock();
+        char buf[1024] = { 0 };
+        av_strerror(re, buf, sizeof(buf) - 1);
+        cout << "avcodec_open2  failed! :" << buf << endl;
+        return false;
+    }
+    mux.unlock();
+    cout << "video avcodec_open2 success!" << endl;
+    return true;
 }
 
 void xdecode::Close()
 {
-	mux.lock();
-	if (codec)
-	{
-		avcodec_close(codec);
-		avcodec_free_context(&codec);
-	}
-	mux.unlock();
+    mux.lock();
+    if (codec)
+    {
+        avcodec_close(codec);
+        avcodec_free_context(&codec);
+    }
+    mux.unlock();
 }
 
 void xdecode::Clear()
 {
-	mux.lock();
-	//ÇåÀí½âÂë»º³å
-	if (codec)
-	{
-		avcodec_flush_buffers(codec);
-	}
-	mux.unlock();
+    mux.lock();
+    //æ¸…ç†è§£ç ç¼“å†²
+    if (codec)
+    {
+        avcodec_flush_buffers(codec);
+    }
+    mux.unlock();
 }
 
 bool xdecode::Send(AVPacket* pkt)
 {
-	if (!pkt || pkt->size <= 0 || !pkt->data) return false;
-	mux.lock();
-	if (!codec)
-	{
-		mux.unlock();
-		return false;
-	}
-	int re = avcodec_send_packet(codec, pkt);
-	mux.unlock();
-	av_packet_free(&pkt);
-	if (re != 0) return false;
-	return true;
+    if (!pkt || pkt->size <= 0 || !pkt->data) return false;
+    mux.lock();
+    if (!codec)
+    {
+        mux.unlock();
+        return false;
+    }
+    int re = avcodec_send_packet(codec, pkt);
+    mux.unlock();
+    av_packet_free(&pkt);
+    if (re != 0) return false;
+    return true;
 }
 
 AVFrame* xdecode::Recv()
 {
-	mux.lock();
-	if (!codec)
-	{
-		mux.unlock();
-		return NULL;
-	}
-	AVFrame* frame = av_frame_alloc();
-	int re = avcodec_receive_frame(codec, frame);
+    mux.lock();
+    if (!codec)
+    {
+        mux.unlock();
+        return NULL;
+    }
+    AVFrame* frame = av_frame_alloc();
+    int re = avcodec_receive_frame(codec, frame);
 
-	mux.unlock();
-	if (re != 0)
-	{
-		av_frame_free(&frame);
-		return NULL;
-	}
-	//cout << "["<<frame->linesize[0]<<"]" << " " << flush << endl;
-	pts = frame->pts;
-	return frame;
+    mux.unlock();
+    if (re != 0)
+    {
+        av_frame_free(&frame);
+        return NULL;
+    }
+    //cout << "["<<frame->linesize[0]<<"]" << " " << flush << endl;
+    pts = frame->pts;
+    return frame;
 
 }
 
@@ -118,12 +118,12 @@ xdecode::~xdecode()
 
 void XFreePacket(AVPacket** pkt)
 {
-	if (pkt || !(*pkt)) return;
-	av_packet_free(pkt);
+    if (pkt || !(*pkt)) return;
+    av_packet_free(pkt);
 }
 
 void XFreeFrame(AVFrame** frame)
 {
-	if (frame || !(*frame)) return;
-	av_frame_free(frame);
+    if (frame || !(*frame)) return;
+    av_frame_free(frame);
 }

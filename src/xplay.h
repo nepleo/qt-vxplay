@@ -2,36 +2,32 @@
 
 #include <QtWidgets/QWidget>
 #include "ui_xplay.h"
-
+#include "xdemuxthread.h"
 
 class xplay : public QWidget
 {
-	Q_OBJECT
+    Q_OBJECT
 
-public:
-	xplay(QWidget *parent = Q_NULLPTR);
-	~xplay();
+  public:
+    xplay(QWidget *parent = Q_NULLPTR);
 
-	//定时器  滑动条显示
-	void timerEvent(QTimerEvent *e);
+    ~xplay();
 
-	//窗口尺寸变化
-	void resizeEvent(QResizeEvent* e);
+    void timerEvent(QTimerEvent *e);
 
-	//双击尺寸变化
-	void mouseDoubleClickEvent(QMouseEvent* e);
+    void resizeEvent(QResizeEvent* e);
 
-	//播放函数
-	void setPause(bool isPause);
+    void mouseDoubleClickEvent(QMouseEvent* e);
 
+    void setPause(bool isPause);
 
-public slots:
-	void openFile();
-	void PlayOrPause();
-	void SliderPress();
-	void SliderRelease();
+  public slots:
+    void onOpenFile();
+    void onPlayOrPause();
+    void onSliderPress();
+    void onSliderRelease();
 
-private:
-	bool isSliderPress = false;
-	Ui::xplayClass ui;
+  private:
+    bool isSliderPress = false;
+    Ui::xplayClass ui;
 };

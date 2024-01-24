@@ -1,39 +1,39 @@
 #pragma once
 #include <QThread>
 #include <mutex>
+
 class ivideocall;
 class xvideothread;
 class xaudiothread;
 class xdemux;
-class xdemuxthread:public QThread
+
+class xdemuxthread : public QThread
 {
-public:
-	virtual bool Open(const char* url, ivideocall* call);
-	//Æô¶¯Ïß³Ì
-	virtual void start();
+  public:
+    virtual bool Open(const char* url, ivideocall* call);
+    //å¯åŠ¨çº¿ç¨‹
+    virtual void start();
+    //å…³é—­çº¿ç¨‹æ¸…ç†èµ„æº;
+    virtual void Close();
+    virtual void Clear();
+    //Seek
+    virtual void Seek(double pos);
+    void run();
+    xdemuxthread();
+    virtual ~xdemuxthread();
+    //çº¿ç¨‹é€€å‡º
+    bool isExit = false;
 
-	//¹Ø±ÕÏß³ÌÇåÀí×ÊÔ´
-	virtual void Close();
-	virtual void Clear();
-	//Seek
-	virtual void Seek(double pos);
+    void setPause(bool isPause);
+    long long pts = 0;
+    long long totalMs = 0;
+    bool isPause = false;
 
-	void run();
-	xdemuxthread();
-	virtual ~xdemuxthread();
-	//Ïß³ÌÍË³ö
-	bool isExit = false;
-
-	void setPause(bool isPause);
-	long long pts = 0;
-	long long totalMs = 0;
-	bool isPause = false;
-
-protected:
-	std::mutex mux;
-	xdemux* demux = 0;
-	xvideothread* vt = 0;
-	xaudiothread* at = 0;
+  protected:
+    std::mutex mux;
+    xdemux* demux = 0;
+    xvideothread* vt = 0;
+    xaudiothread* at = 0;
 
 };
 

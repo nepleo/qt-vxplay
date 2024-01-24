@@ -1,117 +1,115 @@
 #include "xvideothread.h"
 #include "xdecode.h"
 
-
-bool xvideothread::Open(AVCodecParameters* para,ivideocall *call, int width, int height)
+bool xvideothread::Open(AVCodecParameters *para, ivideocall *call, int width, int height)
 {
-	if (!para)return false;
-	Clear();
-	vmux.lock();
-	synpts = 0;
-	//³õÊ¼»¯ÏÔÊ¾´°¿Ú
-	this->call = call;
-	if (call)
-	{
-		call->Init(width, height);
-	}
+    if (!para)
+        return false;
+    Clear();
+    vmux.lock();
+    synpts = 0;
+    // åˆå§‹åŒ–æ˜¾ç¤ºçª—å£
+    this->call = call;
+    if (call)
+    {
+        call->Init(width, height);
+    }
 
-	vmux.unlock();
+    vmux.unlock();
 
-	bool re = true;
-	if (!decode->Open(para))
-	{
-		re = false;
-	}
+    bool re = true;
+    if (!decode->Open(para))
+    {
+        re = false;
+    }
 
-	return re;
+    return re;
 }
-
 
 void xvideothread::run()
 {
-	while (!isExit)
-	{
-		vmux.lock();
-		if (this->isPause)
-		{
-			vmux.unlock();
-			msleep(5);
-			continue;
-		}
+    while (!isExit)
+    {
+        vmux.lock();
+        if (this->isPause)
+        {
+            vmux.unlock();
+            msleep(5);
+            continue;
+        }
 
-		if (synpts > 0 && synpts < decode->pts)   //ÒôÊÓÆµÍ¬²½
-		{
-			vmux.unlock();
-			msleep(1);
-			continue;
-		}
+        if (synpts > 0 && synpts < decode->pts) // éŸ³è§†é¢‘åŒæ­¥
+        {
+            vmux.unlock();
+            msleep(1);
+            continue;
+        }
 
-		AVPacket* pkt = Pop();
-		bool re = decode->Send(pkt);
-		if (!re)
-		{
-			vmux.unlock();
-			msleep(1);
-			continue;
-		}
-		while (!isExit)
-		{
-			AVFrame* frame = decode->Recv();
-			if (!frame) break;
-			//ÏÔÊ¾ÊÓÆµ
-			if (call)
-			{
-				call->Repaint(frame);
-			}
-		}
-		vmux.unlock();
-	}
+        AVPacket *pkt = Pop();
+        bool re = decode->Send(pkt);
+        if (!re)
+        {
+            vmux.unlock();
+            msleep(1);
+            continue;
+        }
+        while (!isExit)
+        {
+            AVFrame *frame = decode->Recv();
+            if (!frame)
+                break;
+            // æ˜¾ç¤ºè§†é¢‘
+            if (call)
+            {
+                call->Repaint(frame);
+            }
+        }
+        vmux.unlock();
+    }
 }
 
 xvideothread::xvideothread()
 {
-
 }
 
 xvideothread::~xvideothread()
 {
-
 }
 
 void xvideothread::setPause(bool isPause)
 {
-	vmux.lock();
-	this->isPause = isPause;
-	vmux.unlock();
+    vmux.lock();
+    this->isPause = isPause;
+    vmux.unlock();
 }
 
-bool xvideothread::RepaintPts(AVPacket* pkt, long long seekpts)
+bool xvideothread::RepaintPts(AVPacket *pkt, long long seekpts)
 {
-	vmux.lock();
-		bool re = decode->Send(pkt);
-		if (!re)
-		{
-			vmux.unlock();
-			return true;  //½áÊø½âÂë
-		}
-		AVFrame *frame = decode->Recv();
-		if (!frame)
-		{
-			vmux.unlock();
-			return false;
-		}
-		//µ½´ïÎ»ÖÃ
-		if (decode->pts >= seekpts)
-		{
-			if(call)
-			{
-				call->Repaint(frame);
-			}					
-			vmux.unlock();
-			return true;
-		}
-		XFreeFrame(&frame);
+    vmux.lock();
+    bool re = decode->Send(pkt);
+    if (!re)
+    {
+        vmux.unlock();
+        return true; // ç»“æŸè§£ç 
+    }
+    AVFrame *frame = decode->Recv();
+    if (!frame)
+    {
+        vmux.unlock();
+        return false;
+    }
+    // åˆ°è¾¾ä½ç½®
+    if (decode->pts >= seekpts)
+    {
+        if (call)
+        {
+            call->Repaint(frame);
+        }
+        vmux.unlock();
+        return true;
+    }
+    XFreeFrame(&frame);
 
-		vmux.unlock();
-	return false;
+    vmux.unlock();
+    return false;
 }

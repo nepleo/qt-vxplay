@@ -4,50 +4,50 @@
 struct AVFormatContext;
 struct AVPacket;
 struct AVCodecParameters;
+
+// åˆ†è§£å¤ç”¨,è§†é¢‘æµå’ŒéŸ³é¢‘æµ
 class xdemux
 {
-public:
+  public:
+    xdemux();
+    virtual ~xdemux();
 
-	//´ò¿ªÃ½ÌåÎÄ¼ş »òÕßÁ÷Ã½Ìå rtmp http rstp 
-	virtual bool Open(const char* url);
+    // æ‰“å¼€åª’ä½“æ–‡ä»¶ æˆ–è€…æµåª’ä½“ rtmp http rstp
+    virtual bool Open(const char *url);
 
-	//¿Õ¼äĞèÒªµ÷ÓÃÕßÊÍ·Å,ÊÍ·ÅAVPacket ¶ÔÏó¿Õ¼ä£¬ºÍÊı¾İ¿Õ¼ä av_packet_free
-	virtual AVPacket *Read();
+    // ç©ºé—´éœ€è¦è°ƒç”¨è€…é‡Šæ”¾,é‡Šæ”¾AVPacket å¯¹è±¡ç©ºé—´ï¼Œå’Œæ•°æ®ç©ºé—´ av_packet_free
+    virtual AVPacket *Read();
 
-	//Ö»¶ÁÊÓÆµ
-	virtual AVPacket* ReadVideo();
+    // åªè¯»è§†é¢‘
+    virtual AVPacket *ReadVideo();
 
-	virtual bool IsAudio(AVPacket* pkt);
+    virtual bool IsAudio(AVPacket *pkt);
 
-	//»ñÈ¡ÊÓÆµ²ÎÊı
-	AVCodecParameters *CopyVPara();
+    // è·å–è§†é¢‘å‚æ•°
+    AVCodecParameters *CopyVPara();
 
-	//»ñÈ¡ÒôÆµ²ÎÊı
-	AVCodecParameters *CopyAPara();
+    // è·å–éŸ³é¢‘å‚æ•°
+    AVCodecParameters *CopyAPara();
 
-	//seek Î»ÖÃ  0.0~1.0
-	virtual bool Seek(double pos);
+    // seek ä½ç½®  0.0~1.0
+    virtual bool Seek(double pos);
 
-	virtual void Clear();
+    virtual void Clear();
 
-	virtual void Close();
+    virtual void Close();
 
-	xdemux();
-	virtual ~xdemux();
-	//×ÜÊ±³¤
-	int totalMs = 0;
-	int width = 0;
-	int height = 0;
-	int sampleRate = 0;
-	int channels = 0;
+    // æ€»æ—¶é•¿,å…ˆè®¾ç½®ä¸ºå…±æœ‰
+    int totalMs = 0;
+    int width = 0;
+    int height = 0;
+    int sampleRate = 0;
+    int channels = 0;
 
-protected:
-	std::mutex mux;
-	//½â·â×°ÉÏÏÂÎÄ
-	AVFormatContext *ic = NULL;
-	//ÒôÊÓÆµË÷Òı£¬¶ÁÈ¡Ê±Çø·ÖÒôÊÓÆµ
-	int videoStream = 0;
-	int audioStream = 1;
-
+  protected:
+    std::mutex mux;
+    // è§£å°è£…ä¸Šä¸‹æ–‡
+    AVFormatContext *ic = NULL;
+    // éŸ³è§†é¢‘ç´¢å¼•ï¼Œè¯»å–æ—¶åŒºåˆ†éŸ³è§†é¢‘
+    int videoStream = 0;
+    int audioStream = 1;
 };
-

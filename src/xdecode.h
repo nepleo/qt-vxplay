@@ -1,28 +1,32 @@
 #pragma once
+
+#include <mutex>
+
 struct AVCodecParameters;
 struct AVCodecContext;
 struct AVFrame;
 struct AVPacket;
-#include <mutex>
+
 extern void XFreePacket(AVPacket** pkt);
 extern void XFreeFrame(AVFrame** frame);
+
 class xdecode
 {
-public:
-	long long pts = 0;
-	bool isAudio = false;
-	//´ò¿ª½âÂëÆ÷,²¢ÊÇ·ñ³É¹¦¶¼ÊÍ·Å¿Õ¼ä
-	virtual bool Open(AVCodecParameters *para);
-	virtual void Close();
-	virtual void Clear();
+  public:
+    long long pts = 0;
+    bool isAudio = false;
+    //æ‰“å¼€è§£ç å™¨,å¹¶æ˜¯å¦æˆåŠŸéƒ½é‡Šæ”¾ç©ºé—´
+    virtual bool Open(AVCodecParameters *para);
+    virtual void Close();
+    virtual void Clear();
 
-	virtual bool Send(AVPacket* pkt);
-	virtual AVFrame *Recv();
-	xdecode();
-	virtual ~xdecode();
+    virtual bool Send(AVPacket* pkt);
+    virtual AVFrame *Recv();
+    xdecode();
+    virtual ~xdecode();
 
-protected:
-	AVCodecContext* codec = 0;
-	std::mutex mux;
+  protected:
+    AVCodecContext* codec = 0;
+    std::mutex mux;
 };
 

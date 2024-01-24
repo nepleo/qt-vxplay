@@ -4,6 +4,7 @@
 #include "xdemux.h"
 #include "xdecode.h"
 #include <iostream>
+
 extern "C"
 {
 #include <libavformat/avformat.h>
@@ -12,148 +13,148 @@ using namespace std;
 
 bool xdemuxthread::Open(const char* url, ivideocall *call)
 {
-	mux.lock();
-	if (!demux) demux = new xdemux();
-	if (!at) at = new xaudiothread();
-	if (!vt) vt = new xvideothread();
-	bool re = demux->Open(url);
-	if (!re)
-	{
-		cout << "demux->Open failed!" << endl;
-		re =  false;
-	}
-	//´ò¿ªÊÓÆµ½âÂëÆ÷
-	if (!vt->Open(demux->CopyVPara(), call, demux->width, demux->height))
-	{
-		re = false;
-		cout << "vt->open failed!" << endl;
-	}
-	//´ò¿ªÒôÆµ½âÂëÆ÷
-	if (!at->Open(demux->CopyAPara(),demux->sampleRate,demux->channels))
-	{
-		re = false;
-		cout << "at->open failed!" << endl;
-	}
-	totalMs = demux->totalMs;
+    mux.lock();
+    if (!demux) demux = new xdemux();
+    if (!at) at = new xaudiothread();
+    if (!vt) vt = new xvideothread();
+    bool re = demux->Open(url);
+    if (!re)
+    {
+        cout << "demux->Open failed!" << endl;
+        re =  false;
+    }
+    //æ‰“å¼€è§†é¢‘è§£ç å™¨
+    if (!vt->Open(demux->CopyVPara(), call, demux->width, demux->height))
+    {
+        re = false;
+        cout << "vt->open failed!" << endl;
+    }
+    //æ‰“å¼€éŸ³é¢‘è§£ç å™¨
+    if (!at->Open(demux->CopyAPara(),demux->sampleRate,demux->channels))
+    {
+        re = false;
+        cout << "at->open failed!" << endl;
+    }
+    totalMs = demux->totalMs;
 
-	mux.unlock();
-	return re;
+    mux.unlock();
+    return re;
 }
 
 void xdemuxthread::start()
 {
-	mux.lock();
+    mux.lock();
 
-	if (!demux) demux = new xdemux();
-	if (!at) at = new xaudiothread();
-	if (!vt) vt = new xvideothread();
+    if (!demux) demux = new xdemux();
+    if (!at) at = new xaudiothread();
+    if (!vt) vt = new xvideothread();
 
-	QThread::start();
-	if (vt) vt->start();
-	if (at) at->start();
-	mux.unlock();
+    QThread::start();
+    if (vt) vt->start();
+    if (at) at->start();
+    mux.unlock();
 }
 
 void xdemuxthread::Close()
 {
-	isExit = true;
-	wait();
-	if (vt) vt->Close();
-	if (at) at->Close();
-	mux.lock();
-	delete vt;
-	delete at;
-	vt = NULL;
-	at = NULL;
-	mux.unlock();
+    isExit = true;
+    wait();
+    if (vt) vt->Close();
+    if (at) at->Close();
+    mux.lock();
+    delete vt;
+    delete at;
+    vt = NULL;
+    at = NULL;
+    mux.unlock();
 }
 
 void xdemuxthread::Clear()
 {
-	mux.lock();
-	if (demux) demux->Clear();
-	if (vt) vt->Clear();
-	if (at) at->Clear();
-	mux.unlock();
+    mux.lock();
+    if (demux) demux->Clear();
+    if (vt) vt->Clear();
+    if (at) at->Clear();
+    mux.unlock();
 }
 
 void xdemuxthread::Seek(double pos)
 {
-	//ÇåÀí»º´æ
-	Clear();
+    //æ¸…ç†ç¼“å­˜
+    Clear();
 
-	mux.lock();
-	bool status = this->isPause;
-	mux.unlock();
-	//ÔÝÍ£
-	setPause(true);
+    mux.lock();
+    bool status = this->isPause;
+    mux.unlock();
+    //æš‚åœ
+    setPause(true);
 
-	mux.lock();
-	if (demux)
-		demux->Seek(pos);
-	//Êµ¼ÊÒªÏÔÊ¾µÄÎ»ÖÃpts
-	long long seekPts = pos * demux->totalMs;
-	while (!isExit)
-	{
-		AVPacket* pkt = demux->ReadVideo();
-		if (!pkt) break;
-		//Èç¹û½âÂëµ½seekPts
-		if (vt->RepaintPts(pkt, seekPts))
-		{
-			this->pts = seekPts;
-			break;
-		}
-		mux.unlock();
+    mux.lock();
+    if (demux)
+        demux->Seek(pos);
+    //å®žé™…è¦æ˜¾ç¤ºçš„ä½ç½®pts
+    long long seekPts = pos * demux->totalMs;
+    while (!isExit)
+    {
+        AVPacket* pkt = demux->ReadVideo();
+        if (!pkt) break;
+        //å¦‚æžœè§£ç åˆ°seekPts
+        if (vt->RepaintPts(pkt, seekPts))
+        {
+            this->pts = seekPts;
+            break;
+        }
+        mux.unlock();
 
-		//seekÊÇ·ÇÔÝÍ£×´Ì¬
-		if (!status)
-			setPause(false);
-	}
+               //seekæ˜¯éžæš‚åœçŠ¶æ€
+        if (!status)
+            setPause(false);
+    }
 }
 
 void xdemuxthread::run()
 {
-	while (!isExit)
-	{
-		mux.lock();
-		if (isPause)
-		{
-			mux.unlock();
-			msleep(5);
-			continue;
-		}
-		
-		if (!demux)
-		{
-			mux.unlock();
-			msleep(5);
-			continue;
-		}
-		//ÒôÊÓÆµÍ¬²½
-		if (vt && at)
-		{
-			pts = at->pts;
-			vt->synpts = at->pts;
-		}
-		AVPacket *pkt = demux->Read();
-		if (!pkt)
-		{
-			mux.unlock();
-			msleep(5);
-			continue;
-		}
-		if (demux->IsAudio(pkt))
-		{
-			if (at) at->Push(pkt);
-		}
-		else
-		{
-			if (vt) vt->Push(pkt);
-			msleep(1);
-		}
-		mux.unlock();
+    while (!isExit)
+    {
+        mux.lock();
+        if (isPause)
+        {
+            mux.unlock();
+            msleep(5);
+            continue;
+        }
 
-	}
+        if (!demux)
+        {
+            mux.unlock();
+            msleep(5);
+            continue;
+        }
+        //éŸ³è§†é¢‘åŒæ­¥
+        if (vt && at)
+        {
+            pts = at->pts;
+            vt->synpts = at->pts;
+        }
+        AVPacket *pkt = demux->Read();
+        if (!pkt)
+        {
+            mux.unlock();
+            msleep(5);
+            continue;
+        }
+        if (demux->IsAudio(pkt))
+        {
+            if (at) at->Push(pkt);
+        }
+        else
+        {
+            if (vt) vt->Push(pkt);
+            msleep(1);
+        }
+        mux.unlock();
+
+    }
 
 }
 
@@ -163,15 +164,15 @@ xdemuxthread::xdemuxthread()
 
 xdemuxthread::~xdemuxthread()
 {
-	isExit = true;
-	wait();
+    isExit = true;
+    wait();
 }
 
 void xdemuxthread::setPause(bool isPause)
 {
-	mux.lock();
-	this->isPause = isPause;
-	if (at) at->setPause(isPause);
-	if (vt) vt->setPause(isPause);
-	mux.unlock();
+    mux.lock();
+    this->isPause = isPause;
+    if (at) at->setPause(isPause);
+    if (vt) vt->setPause(isPause);
+    mux.unlock();
 }

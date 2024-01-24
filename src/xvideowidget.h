@@ -1,48 +1,47 @@
 #pragma once
 
-#include <QOpenGLWidget>
 #include <QOpenGLFunctions>
 #include <QGLShaderProgram>
+#include <QOpenGLWidget>
 #include <mutex>
+
 #include "ivideocall.h"
 
 struct AVFrame;
 
-class xvideowidget : public QOpenGLWidget, protected QOpenGLFunctions,public ivideocall
+class xvideowidget : public QOpenGLWidget, protected QOpenGLFunctions, public ivideocall
 {
-	Q_OBJECT
+    Q_OBJECT
 
-public:
+  public:
+    virtual void Init(int width, int height);
+    virtual void Repaint(AVFrame *frame);
+    xvideowidget(QWidget *parent);
+    ~xvideowidget();
 
-	virtual void Init(int width, int height);
-	virtual void Repaint(AVFrame* frame);
-	xvideowidget(QWidget* parent);
-	~xvideowidget();
-protected:
-	//Ë¢ĞÂÏÔÊ¾
-	void paintGL();
+  protected:
+    // åˆ·æ–°æ˜¾ç¤º
+    void paintGL();
 
-	//³õÊ¼»¯gl
-	void initializeGL();
+    // åˆå§‹åŒ–gl
+    void initializeGL();
 
-	// ´°¿Ú³ß´ç±ä»¯
-	void resizeGL(int width, int height);
+    // çª—å£å°ºå¯¸å˜åŒ–
+    void resizeGL(int width, int height);
 
-	
-private:
-	std::mutex mux;
-	//shader³ÌĞò
-	QGLShaderProgram program;
+  private:
+    std::mutex mux;
+    // shaderç¨‹åº
+    QGLShaderProgram program;
 
-	//shaderÖĞyuv±äÁ¿µØÖ·
-	GLuint unis[3] = { 0 };
-	//opengµÄ textureµØÖ·
-	GLuint texs[3] = { 0 };
+    // shaderä¸­yuvå˜é‡åœ°å€
+    GLuint unis[3] = {0};
+    // opengçš„ textureåœ°å€
+    GLuint texs[3] = {0};
 
-	//²ÄÖÊÄÚ´æ¿Õ¼ä
-	unsigned char* datas[3] = { 0 };
+    // æè´¨å†…å­˜ç©ºé—´
+    unsigned char *datas[3] = {0};
 
-	int width = 240;
-	int height = 128;
-
+    int width = 240;
+    int height = 128;
 };

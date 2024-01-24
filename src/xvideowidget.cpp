@@ -1,94 +1,78 @@
 #include "xvideowidget.h"
 #include <QDebug>
 #include <QTimer>
-extern "C" {
-#include<libavutil/frame.h>
+extern "C"
+{
+#include <libavutil/frame.h>
 }
-//×Ô¶¯¼ÓË«ÒıºÅ
+// è‡ªåŠ¨åŠ åŒå¼•å·
 #define GET_STR(x) #x
 #define A_VER 3
 #define T_VER 4
 
-FILE* fp = NULL;
+FILE *fp = NULL;
 
-//¶¥µãshader
-const char* vString = GET_STR(
-	attribute vec4 vertexIn;
-attribute vec2 textureIn;
-varying vec2 textureOut;
-void main(void)
+// é¡¶ç‚¹shader
+const char *vString =
+    GET_STR(attribute vec4 vertexIn; attribute vec2 textureIn; varying vec2 textureOut; void main(void) {
+        gl_Position = vertexIn;
+        textureOut = textureIn;
+    });
+
+// ç‰‡å…ƒshader
+const char *tString =
+    GET_STR(varying vec2 textureOut; uniform sampler2D tex_y; uniform sampler2D tex_u; uniform sampler2D tex_v;
+
+            void main(void) {
+                vec3 yuv;
+                vec3 rgb;
+                yuv.x = texture2D(tex_y, textureOut).r;
+                yuv.y = texture2D(tex_u, textureOut).r - 0.5;
+                yuv.z = texture2D(tex_v, textureOut).r - 0.5;
+                rgb = mat3(1.0, 1.0, 1.0, 0.0, -0.39465, 2.03211, 1.13983, -0.58060, 0.0) * yuv;
+                gl_FragColor = vec4(rgb, 1.0);
+            }
+
+            );
+
+void xvideowidget::Repaint(AVFrame *frame)
 {
-	gl_Position = vertexIn;
-	textureOut = textureIn;
-}
-);
+    if (!frame)
+        return;
+    // è¡Œå¯¹é½
+    mux.lock();
+    // å®¹é”™ï¼Œä¿è¯å°ºå¯¸æ­£ç¡®
+    if (!datas[0] || width * height == 0 || frame->width != this->width || frame->height != this->height)
+    {
+        av_frame_free(&frame);
+        mux.unlock();
+        return;
+    }
 
-
-//Æ¬Ôªshader
-const char* tString = GET_STR(
-	varying vec2 textureOut;
-uniform sampler2D tex_y;
-uniform sampler2D tex_u;
-uniform sampler2D tex_v;
-
-void main(void)
-{
-	vec3 yuv;
-	vec3 rgb;
-	yuv.x = texture2D(tex_y, textureOut).r;
-	yuv.y = texture2D(tex_u, textureOut).r - 0.5;
-	yuv.z = texture2D(tex_v, textureOut).r - 0.5;
-	rgb = mat3(1.0, 1.0, 1.0,
-		0.0, -0.39465, 2.03211,
-		1.13983, -0.58060, 0.0) * yuv;
-	gl_FragColor = vec4(rgb, 1.0);
-}
-
-);
-
-
-
-void xvideowidget::Repaint(AVFrame* frame)
-{
-	if (!frame) return;
-	//ĞĞ¶ÔÆë
-	mux.lock();
-	//Èİ´í£¬±£Ö¤³ß´çÕıÈ·
-	if (!datas[0] || width * height == 0 || frame->width != this->width || frame->height != this->height)
-	{
-		av_frame_free(&frame);
-		mux.unlock();
-		return;
-	}
-
-	if (width == frame->linesize[0]) //ÎŞĞè¶ÔÆë
-	{
-		memcpy(datas[0], frame->data[0], width * height);
-		memcpy(datas[1], frame->data[1], width * height / 4);
-		memcpy(datas[2], frame->data[2], width * height / 4);
-	}
-	else//ĞĞ¶ÔÆëÎÊÌâ
-	{
-		for (int i = 0; i < height; i++) //Y 
-			memcpy(datas[0] + width * i, frame->data[0] + frame->linesize[0] * i, width);
-		for (int i = 0; i < height / 2; i++) //U
-			memcpy(datas[1] + width / 2 * i, frame->data[1] + frame->linesize[1] * i, width);
-		for (int i = 0; i < height / 2; i++) //V
-			memcpy(datas[2] + width / 2 * i, frame->data[2] + frame->linesize[2] * i, width);
-
-	}
-	mux.unlock();
-	av_frame_free(&frame);
-	//Ë¢ĞÂÏÔÊ¾
-	update();
-
+    if (width == frame->linesize[0]) // æ— éœ€å¯¹é½
+    {
+        memcpy(datas[0], frame->data[0], width * height);
+        memcpy(datas[1], frame->data[1], width * height / 4);
+        memcpy(datas[2], frame->data[2], width * height / 4);
+    }
+    else // è¡Œå¯¹é½é—®é¢˜
+    {
+        for (int i = 0; i < height; i++) // Y
+            memcpy(datas[0] + width * i, frame->data[0] + frame->linesize[0] * i, width);
+        for (int i = 0; i < height / 2; i++) // U
+            memcpy(datas[1] + width / 2 * i, frame->data[1] + frame->linesize[1] * i, width);
+        for (int i = 0; i < height / 2; i++) // V
+            memcpy(datas[2] + width / 2 * i, frame->data[2] + frame->linesize[2] * i, width);
+    }
+    mux.unlock();
+    av_frame_free(&frame);
+    // åˆ·æ–°æ˜¾ç¤º
+    update();
 }
 
-
-//×¼±¸yuvÊı¾İ
-// ffmpeg -i v1080.mp4 -t 10 -s 240x128 -pix_fmt yuv420p  out240x128.yuv
-xvideowidget::xvideowidget(QWidget* parent)
-	: QOpenGLWidget(parent)
+// å‡†å¤‡yuvæ•°æ®
+//  ffmpeg -i v1080.mp4 -t 10 -s 240x128 -pix_fmt yuv420p  out240x128.yuv
+xvideowidget::xvideowidget(QWidget *parent) : QOpenGLWidget(parent)
 {
 }
 
@@ -98,173 +82,156 @@ xvideowidget::~xvideowidget()
 
 void xvideowidget::Init(int width, int height)
 {
-	mux.lock();
-	this->width = width;
-	this->height = height;
+    mux.lock();
+    this->width = width;
+    this->height = height;
 
-	delete datas[0];
-	delete datas[1];
-	delete datas[2];
-	///·ÖÅä²ÄÖÊÄÚ´æ¿Õ¼ä
-	datas[0] = new unsigned char[width * height];		//Y
-	datas[1] = new unsigned char[width * height / 4];	//U
-	datas[2] = new unsigned char[width * height / 4];	//V
+    delete datas[0];
+    delete datas[1];
+    delete datas[2];
 
-	if (texs[0])
-	{
-		glDeleteTextures(3, texs);
-	}
-		//´´½¨²ÄÖÊ
-	glGenTextures(3, texs);
+    /// åˆ†é…æè´¨å†…å­˜ç©ºé—´
+    datas[0] = new unsigned char[width * height];     // Y
+    datas[1] = new unsigned char[width * height / 4]; // U
+    datas[2] = new unsigned char[width * height / 4]; // V
 
-	//Y
-	glBindTexture(GL_TEXTURE_2D, texs[0]);
-	//·Å´ó¹ıÂË£¬ÏßĞÔ²åÖµ   GL_NEAREST(Ğ§ÂÊ¸ß£¬µ«ÂíÈü¿ËÑÏÖØ)
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	//´´½¨²ÄÖÊÏÔ¿¨¿Õ¼ä
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
+    if (texs[0])
+    {
+        glDeleteTextures(3, texs);
+    }
+    // åˆ›å»ºæè´¨
+    glGenTextures(3, texs);
 
-	//U
-	glBindTexture(GL_TEXTURE_2D, texs[1]);
-	//·Å´ó¹ıÂË£¬ÏßĞÔ²åÖµ
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	//´´½¨²ÄÖÊÏÔ¿¨¿Õ¼ä
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width / 2, height / 2, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
+           // Y
+    glBindTexture(GL_TEXTURE_2D, texs[0]);
+    // æ”¾å¤§è¿‡æ»¤ï¼Œçº¿æ€§æ’å€¼   GL_NEAREST(æ•ˆç‡é«˜ï¼Œä½†é©¬èµ›å…‹ä¸¥é‡)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    // åˆ›å»ºæè´¨æ˜¾å¡ç©ºé—´
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
 
-	//V
-	glBindTexture(GL_TEXTURE_2D, texs[2]);
-	//·Å´ó¹ıÂË£¬ÏßĞÔ²åÖµ
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	//´´½¨²ÄÖÊÏÔ¿¨¿Õ¼ä
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width / 2, height / 2, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
+           // U
+    glBindTexture(GL_TEXTURE_2D, texs[1]);
+    // æ”¾å¤§è¿‡æ»¤ï¼Œçº¿æ€§æ’å€¼
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    // åˆ›å»ºæè´¨æ˜¾å¡ç©ºé—´
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width / 2, height / 2, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
 
-	mux.unlock();
+           // V
+    glBindTexture(GL_TEXTURE_2D, texs[2]);
+    // æ”¾å¤§è¿‡æ»¤ï¼Œçº¿æ€§æ’å€¼
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    // åˆ›å»ºæè´¨æ˜¾å¡ç©ºé—´
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, width / 2, height / 2, 0, GL_RED, GL_UNSIGNED_BYTE, 0);
 
+    mux.unlock();
 }
 
-//³õÊ¼»¯opengl
+// åˆå§‹åŒ–opengl
 void xvideowidget::initializeGL()
 {
-	qDebug() << "initializeGL";
-	mux.lock();
+    qDebug() << "initializeGL";
+    mux.lock();
 
-	//³õÊ¼»¯opengl £¨QOpenGLFunctions¼Ì³Ğ£©º¯Êı 
-	initializeOpenGLFunctions();
+           // åˆå§‹åŒ–opengl ï¼ˆQOpenGLFunctionsç»§æ‰¿ï¼‰å‡½æ•°
+    initializeOpenGLFunctions();
 
-	//program¼ÓÔØshader£¨¶¥µãºÍÆ¬Ôª£©½Å±¾
-	//Æ¬Ôª£¨ÏñËØ£©
-	qDebug() << program.addShaderFromSourceCode(QGLShader::Fragment, tString);
-	//¶¥µãshader
-	qDebug() << program.addShaderFromSourceCode(QGLShader::Vertex, vString);
+           // programåŠ è½½shaderï¼ˆé¡¶ç‚¹å’Œç‰‡å…ƒï¼‰è„šæœ¬
+           // ç‰‡å…ƒï¼ˆåƒç´ ï¼‰
 
-	//ÉèÖÃ¶¥µã×ø±êµÄ±äÁ¿
-	program.bindAttributeLocation("vertexIn", A_VER);
+    qDebug() << program.addShaderFromSourceCode(QGLShader::Fragment, tString);
+    qDebug() << program.addShaderFromSourceCode(QGLShader::Vertex, vString);
 
-	//ÉèÖÃ²ÄÖÊ×ø±ê
-	program.bindAttributeLocation("textureIn", T_VER);
+           // è®¾ç½®é¡¶ç‚¹åæ ‡çš„å˜é‡
+    program.bindAttributeLocation("vertexIn", A_VER);
 
-	//±àÒëshader
-	qDebug() << "program.link() = " << program.link();
+           // è®¾ç½®æè´¨åæ ‡
+    program.bindAttributeLocation("textureIn", T_VER);
 
-	qDebug() << "program.bind() = " << program.bind();
+           // ç¼–è¯‘shader
+    qDebug() << "program.link() = " << program.link();
 
-	//´«µİ¶¥µãºÍ²ÄÖÊ×ø±ê
-	//¶¥µã
-	static const GLfloat ver[] = {
-		-1.0f,-1.0f,
-		1.0f,-1.0f,
-		-1.0f, 1.0f,
-		1.0f,1.0f
-	};
+    qDebug() << "program.bind() = " << program.bind();
 
-	//²ÄÖÊ
-	static const GLfloat tex[] = {
-		0.0f, 1.0f,
-		1.0f, 1.0f,
-		0.0f, 0.0f,
-		1.0f, 0.0f
-	};
+           // ä¼ é€’é¡¶ç‚¹å’Œæè´¨åæ ‡
+           // é¡¶ç‚¹
+    static const GLfloat ver[] = {-1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f};
 
-	//¶¥µã
-	glVertexAttribPointer(A_VER, 2, GL_FLOAT, 0, 0, ver);
-	glEnableVertexAttribArray(A_VER);
+           // æè´¨
+    static const GLfloat tex[] = {0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f};
 
-	//²ÄÖÊ
-	glVertexAttribPointer(T_VER, 2, GL_FLOAT, 0, 0, tex);
-	glEnableVertexAttribArray(T_VER);
+           // é¡¶ç‚¹
+    glVertexAttribPointer(A_VER, 2, GL_FLOAT, 0, 0, ver);
+    glEnableVertexAttribArray(A_VER);
 
+           // æè´¨
+    glVertexAttribPointer(T_VER, 2, GL_FLOAT, 0, 0, tex);
+    glEnableVertexAttribArray(T_VER);
 
-	//´Óshader»ñÈ¡²ÄÖÊ
-	unis[0] = program.uniformLocation("tex_y");
-	unis[1] = program.uniformLocation("tex_u");
-	unis[2] = program.uniformLocation("tex_v");
+           // ä»shaderè·å–æè´¨
+    unis[0] = program.uniformLocation("tex_y");
+    unis[1] = program.uniformLocation("tex_u");
+    unis[2] = program.uniformLocation("tex_v");
 
-	mux.unlock();
+    mux.unlock();
 
+           // fp = fopen("out240x128.yuv", "rb");
+           // if (!fp)
+           //{
+           //	qDebug() << "out240x128.yuv file open failed!";
+           // }
 
-	//fp = fopen("out240x128.yuv", "rb");
-	//if (!fp)
-	//{
-	//	qDebug() << "out240x128.yuv file open failed!";
-	//}
-
-
-	////Æô¶¯¶¨Ê±Æ÷
-	//QTimer* ti = new QTimer(this);
-	//connect(ti, SIGNAL(timeout()), this, SLOT(update()));
-	//ti->start(40);
+           //å¯åŠ¨å®šæ—¶å™¨
+           // QTimer* ti = new QTimer(this);
+           // connect(ti, SIGNAL(timeout()), this, SLOT(update()));
+           // ti->start(40);
 }
 
-//Ë¢ĞÂÏÔÊ¾
+// åˆ·æ–°æ˜¾ç¤º
 void xvideowidget::paintGL()
 {
-	//if (feof(fp))
-	//{
-	//	fseek(fp, 0, SEEK_SET);
-	//}
-	//fread(datas[0], 1, width * height, fp);
-	//fread(datas[1], 1, width * height / 4, fp);
-	//fread(datas[2], 1, width * height / 4, fp);
-	mux.lock();
+    // if (feof(fp))
+    //{
+    //	fseek(fp, 0, SEEK_SET);
+    // }
+    // fread(datas[0], 1, width * height, fp);
+    // fread(datas[1], 1, width * height / 4, fp);
+    // fread(datas[2], 1, width * height / 4, fp);
+    mux.lock();
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texs[0]); //0²ã°ó¶¨µ½Y²ÄÖÊ
-	//ĞŞ¸Ä²ÄÖÊÄÚÈİ(¸´ÖÆÄÚ´æÄÚÈİ)
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RED, GL_UNSIGNED_BYTE, datas[0]);
-	//Óëshader uni±éÀú¹ØÁª
-	glUniform1i(unis[0], 0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texs[0]); // 0å±‚ç»‘å®šåˆ°Yæè´¨
+    // ä¿®æ”¹æè´¨å†…å®¹(å¤åˆ¶å†…å­˜å†…å®¹)
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RED, GL_UNSIGNED_BYTE, datas[0]);
+    // ä¸shader uniéå†å…³è”
+    glUniform1i(unis[0], 0);
 
+    glActiveTexture(GL_TEXTURE0 + 1);
+    glBindTexture(GL_TEXTURE_2D, texs[1]); // 1å±‚ç»‘å®šåˆ°Uæè´¨
+                                           // ä¿®æ”¹æè´¨å†…å®¹(å¤åˆ¶å†…å­˜å†…å®¹)
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width / 2, height / 2, GL_RED, GL_UNSIGNED_BYTE, datas[1]);
+    // ä¸shader uniéå†å…³è”
+    glUniform1i(unis[1], 1);
 
-	glActiveTexture(GL_TEXTURE0 + 1);
-	glBindTexture(GL_TEXTURE_2D, texs[1]); //1²ã°ó¶¨µ½U²ÄÖÊ
-										   //ĞŞ¸Ä²ÄÖÊÄÚÈİ(¸´ÖÆÄÚ´æÄÚÈİ)
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width / 2, height / 2, GL_RED, GL_UNSIGNED_BYTE, datas[1]);
-	//Óëshader uni±éÀú¹ØÁª
-	glUniform1i(unis[1], 1);
+    glActiveTexture(GL_TEXTURE0 + 2);
+    glBindTexture(GL_TEXTURE_2D, texs[2]); // 2å±‚ç»‘å®šåˆ°Væè´¨
+                                           // ä¿®æ”¹æè´¨å†…å®¹(å¤åˆ¶å†…å­˜å†…å®¹)
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width / 2, height / 2, GL_RED, GL_UNSIGNED_BYTE, datas[2]);
+    // ä¸shader uniéå†å…³è”
+    glUniform1i(unis[2], 2);
 
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    qDebug() << "paintGL";
 
-	glActiveTexture(GL_TEXTURE0 + 2);
-	glBindTexture(GL_TEXTURE_2D, texs[2]); //2²ã°ó¶¨µ½V²ÄÖÊ
-										   //ĞŞ¸Ä²ÄÖÊÄÚÈİ(¸´ÖÆÄÚ´æÄÚÈİ)
-	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width / 2, height / 2, GL_RED, GL_UNSIGNED_BYTE, datas[2]);
-	//Óëshader uni±éÀú¹ØÁª
-	glUniform1i(unis[2], 2);
-
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-	qDebug() << "paintGL";
-
-	mux.unlock();
+    mux.unlock();
 }
 
-
-// ´°¿Ú³ß´ç±ä»¯
+// çª—å£å°ºå¯¸å˜åŒ–
 void xvideowidget::resizeGL(int width, int height)
 {
-	mux.lock();
-	qDebug() << "resizeGL " << width << ":" << height;
-	mux.unlock();
-	
+    mux.lock();
+    qDebug() << "resizeGL " << width << ":" << height;
+    mux.unlock();
 }

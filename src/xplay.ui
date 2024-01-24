@@ -23,7 +23,7 @@
     </rect>
    </property>
   </widget>
-  <widget class="QPushButton" name="openFile">
+  <widget class="QPushButton" name="openfile">
    <property name="geometry">
     <rect>
      <x>80</x>
@@ -33,7 +33,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>文件</string>
+    <string>File</string>
    </property>
   </widget>
   <widget class="QSlider" name="playpos">
@@ -62,7 +62,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>播放</string>
+    <string>Play</string>
    </property>
   </widget>
  </widget>
@@ -75,82 +75,17 @@
    <slots>
     <slot>SliderPress()</slot>
     <slot>SliderRelease()</slot>
+    <slot>onSliderPress()</slot>
+    <slot>onSliderRelease()</slot>
    </slots>
   </customwidget>
  </customwidgets>
- <resources>
-  <include location="xplay.qrc"/>
- </resources>
- <connections>
-  <connection>
-   <sender>openFile</sender>
-   <signal>clicked()</signal>
-   <receiver>xplayClass</receiver>
-   <slot>openFile()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>200</x>
-     <y>826</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>67</x>
-     <y>719</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>isplay</sender>
-   <signal>clicked()</signal>
-   <receiver>xplayClass</receiver>
-   <slot>PlayOrPause()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>211</x>
-     <y>660</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>209</x>
-     <y>719</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>playpos</sender>
-   <signal>sliderPressed()</signal>
-   <receiver>xplayClass</receiver>
-   <slot>SliderPress()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>304</x>
-     <y>704</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>308</x>
-     <y>719</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>playpos</sender>
-   <signal>sliderReleased()</signal>
-   <receiver>xplayClass</receiver>
-   <slot>SliderRelease()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>509</x>
-     <y>702</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>524</x>
-     <y>719</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <resources/>
+ <connections/>
  <slots>
-  <slot>openFile()</slot>
-  <slot>PlayOrPause()</slot>
-  <slot>SliderPress()</slot>
-  <slot>SliderRelease()</slot>
+  <slot>onOpenFile()</slot>
+  <slot>onPlayOrPause()</slot>
+  <slot>onSliderPress()</slot>
+  <slot>onSliderRelease()</slot>
  </slots>
 </ui>

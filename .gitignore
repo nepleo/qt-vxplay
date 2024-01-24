@@ -1,0 +1,7 @@
+.qmake.stash
+
+build*
+
+.vcxproj
+
+.pro.user

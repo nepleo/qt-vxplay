@@ -1,34 +1,32 @@
 #pragma once
-//½âÂëºÍÏÔÊ¾ÊÓÆµ
+// è§£ç å’Œæ˜¾ç¤ºè§†é¢‘
 
-#include <list>
-#include <mutex>
-#include <Qthread>
 #include "ivideocall.h"
 #include "xdecodethread.h"
+#include <Qthread>
+#include <list>
+#include <mutex>
+
 struct AVPacket;
 struct AVCodecParameters;
 class xdecode;
 
-class xvideothread : public xdecodethread 
+class xvideothread : public xdecodethread
 {
-public:
-	virtual bool Open(AVCodecParameters* para,ivideocall *call,int width,int height);
-	void run();
+  public:
+    virtual bool Open(AVCodecParameters *para, ivideocall *call, int width, int height);
+    void run();
 
-	xvideothread();
-	virtual ~xvideothread();
-	bool isPause = false;
-	void setPause(bool isPause);
-	//Í¬²½Ê±¼äÓÉÍâ²¿´«Èë
-	long long synpts = 0;
-	//½âÂëpts,Èç¹û½ÓÊÕµ½µÄ½âÂëÊı¾İpts>= seekpts ,return true,²¢ÇÒÏÔÊ¾»­Ãæ
-	virtual bool RepaintPts(AVPacket* pkt, long long seekpts);
-protected:
+    xvideothread();
+    virtual ~xvideothread();
+    bool isPause = false;
+    void setPause(bool isPause);
+    // åŒæ­¥æ—¶é—´ç”±å¤–éƒ¨ä¼ å…¥
+    long long synpts = 0;
+    // è§£ç pts,å¦‚æœæ¥æ”¶åˆ°çš„è§£ç æ•°æ®pts>= seekpts ,return true,å¹¶ä¸”æ˜¾ç¤ºç”»é¢
+    virtual bool RepaintPts(AVPacket *pkt, long long seekpts);
 
-	std::mutex vmux;
-	ivideocall* call;
-
-
+  protected:
+    std::mutex vmux;
+    ivideocall *call;
 };
-
